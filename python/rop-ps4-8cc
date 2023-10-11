@@ -2,13 +2,13 @@
 
 self="$0"
 
-if [ "x${self:0:1}" != x/ ]
-then self="$PWD/$self"
+if [ "x${self:0:1}" != x/ ]; then
+    self="$PWD/$self"
 fi
 
 self="$(dirname "$self")"
 temp="./temp"
-rm -rf "$temp" 
+rm -rf "$temp"
 mkdir -p "$temp"
 
 failure () {
@@ -28,26 +28,27 @@ shift
 cat "$temp/pp.s" > "$temp/linked.s" || failure
 touch "$temp/custom.rop"
 
-while [ "x$1" != x ]
-do
-ii="$1"
-ll="${#ii}"
-ll="$((ll-4))"
-if [ "${ii:ll}" == ".rop" ]
-then cat "$ii" >> "$temp/custom.rop"
-else
-cat > "$temp/pp.c" << EOF
+while [ "x$1" != x ]; do
+    ii="$1"
+    ll="${#ii}"
+    ll="$((ll-4))"
+    
+    if [ "${ii:ll}" == ".rop" ]; then
+        cat "$ii" >> "$temp/custom.rop"
+    else
+        cat > "$temp/pp.c" << EOF
 unsigned short __builtin_bswap16(unsigned short);
 unsigned int __builtin_bswap32(unsigned int);
 unsigned long long __builtin_bswap64(unsigned long long);
 EOF
-cpp -P -D__PS4__ -DPRINTF_DISABLE_SUPPORT_FLOAT '-D__asm__(...)=' '-D__restrict=' '-D__extension__=' '-D__builtin_va_list=int' '-D__inline=' '-D__attribute__(x)=' '-D__asm(...)=' '-D__builtin_offsetof(a, b)=(((char*)&((a*)0)->b)-(char*)0)' -isystem "$self/../include" -isystem "$self/../.." -isystem "$self/../../freebsd-headers" -nostdinc "$1" >> "$temp/pp.c" || failure
-"$self/../8cc" "$temp/pp.c" -S -o "$temp/pp.s" || failure
-cat "$temp/pp.s" >> "$temp/linked.s" || failure
-echo >> "$temp/linked.s" || failure
-fi
-shift
+        cpp -P -D__PS4__ -DPRINTF_DISABLE_SUPPORT_FLOAT '-D__asm__(...)=' '-D__restrict=' '-D__extension__=' '-D__builtin_va_list=int' '-D__inline=' '-D__attribute__(x)=' '-D__asm(...)=' '-D__builtin_offsetof(a, b)=(((char*)&((a*)0)->b)-(char*)0)' -isystem "$self/../include" -isystem "$self/../.." -isystem "$self/../../freebsd-headers" -nostdinc "$1" >> "$temp/pp.c" || failure
+        "$self/../8cc" "$temp/pp.c" -S -o "$temp/pp.s" || failure
+        cat "$temp/pp.s" >> "$temp/linked.s" || failure
+        echo >> "$temp/linked.s" || failure
+    fi
+    shift
 done
+
 cat >> "$temp/linked.rop" << EOF
 \$\$var main_ret = malloc(8);
 \$\$var printf_buf = malloc(65536);
@@ -86,8 +87,10 @@ _pivot_back_addr:
 dq 0
 \$pivot_addr
 EOF
+
 python3 "$self/nativecalls.py" < "$temp/linked.s" | python3 "$self/s2rop.py" >> "$temp/linked.rop" || failure
 cat "$temp/custom.rop" >> "$temp/linked.rop"
+
 cat >> "$temp/linked.rop" << EOF
 \$\$pivot(ropchain);
 \$\$var main_ret = read_ptr_at(main_ret);
@@ -97,5 +100,5 @@ cat >> "$temp/linked.rop" << EOF
 \$\$var _ = malloc_nogc.pop();
 \$\$var _ = malloc_nogc.pop();
 EOF
-cat "$temp/linked.rop" > "$out_o"
 
+cat "$temp/linked.rop" > "$out_o"
