@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #ifndef ELVM_LIBC_STDARG_H_
 #define ELVM_LIBC_STDARG_H_
 

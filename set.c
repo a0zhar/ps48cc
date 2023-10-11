@@ -12,11 +12,10 @@
 // It should be very fast for small number of items.
 // However, if you plan to add a lot of items to a set,
 // you should consider using Map as a set.
+
 #include <stdlib.h>
 #include <string.h>
-#include "8cc.h"
-
-
+#include "headers/set.h"
 Set *set_add(Set *s, char *v) {
     Set *r = malloc(sizeof(Set));
     r->next = s;

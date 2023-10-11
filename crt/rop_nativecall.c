@@ -3,15 +3,10 @@ unsigned long long __builtin_gadget_addr(const char* s);
 unsigned long long __builtin_nativecall(unsigned long long fnaddr) {
     unsigned long long* args = &fnaddr;
     args += 2;
-    // Initialize an array to hold the ROP chain
     unsigned long long ropchain_array[40];
     unsigned long long* ropchain = ropchain_array;
-
-    // Check if ropchain is 16-byte aligned and adjust if necessary
     if (!(((unsigned long long)ropchain) & 15))
         ropchain++;
-
-    // ROP chain setup
     ropchain[0] = __builtin_gadget_addr("pop rsi");
     ropchain[1] = ropchain + 38;
     ropchain[2] = __builtin_gadget_addr("mov rax, [rdi]");
@@ -51,6 +46,5 @@ unsigned long long __builtin_nativecall(unsigned long long fnaddr) {
     ropchain[36] = 0;
     ropchain[37] = __builtin_gadget_addr("pop rsp");
     ropchain[38] = 0;
-    // Execute the ROP chain as a function
     return ((unsigned long long(*)(void))ropchain)();
 }

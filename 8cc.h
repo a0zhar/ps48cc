@@ -11,7 +11,6 @@
 #include <stdnoreturn.h>
 #include <time.h>
 
-
 // Token Type's
 #define TIDENT        0 // (Token Type) Identifier token
 #define TKEYWORD      1 // (Token Type) Keyword token
@@ -32,6 +31,24 @@
 #define ENC_UTF8    3 // (Encoding Type) UTF-8 encoding
 #define ENC_WCHAR   4 // (Encoding Type) Wide character encoding
 
+// object type
+#define KIND_VOID    0   // Void type
+#define KIND_BOOL    1   // Boolean type
+#define KIND_CHAR    2   // Character type
+#define KIND_SHORT   3   // Short integer type
+#define KIND_INT     4   // Integer type
+#define KIND_LONG    5   // Long integer type
+#define KIND_LLONG   6   // Long long integer type
+#define KIND_FLOAT   7   // Float type
+#define KIND_DOUBLE  8   // Double type
+#define KIND_LDOUBLE 9   // Long double type
+#define KIND_ARRAY   10  // Array type
+#define KIND_ENUM    11  // Enumerated type
+#define KIND_PTR     12  // Pointer type
+#define KIND_STRUCT  13  // Struct type
+#define KIND_FUNC    14  // Function type
+#define KIND_STUB    15  // Used only in parser
+
 typedef struct _Vector {
     void** body; // Pointer to the array of elements
     int len;     // Current number of elements in the vector
@@ -41,15 +58,15 @@ typedef struct _Vector {
 typedef struct _Map {
     // Parent map (for hierarchical maps)
     struct _Map* parent;
-#ifdef __eir__
+    #ifdef __eir__
     Vector* v;
-#else
+    #else
     char** key;  // Array of keys
     void** val;  // Array of values
     int size;    // Size of the hash table
     int nelem;   // Number of elements in the map
     int nused;   // Number of used slots in the hash table
-#endif
+    #endif
 } Map;
 
 typedef struct _Dict {
@@ -106,66 +123,6 @@ typedef struct _Token {
         };
     };
 } Token;
-
-
-// Abstract Syntax Tree (MAP i quess)
-enum {
-    AST_LITERAL = 256,  // Represents a literal value in the source code (e.g., a number or a string).               
-    AST_LVAR,           // Represents a local variable. 
-    AST_GVAR,           // Represents a global variable. 
-    AST_TYPEDEF,        // Represents a typedef declaration. 
-    AST_FUNCALL,        // Represents a function call. 
-    AST_FUNCPTR_CALL,   // Represents a function pointer call.
-    AST_FUNCDESG,       // Represents a function designator.
-    AST_FUNC,           // Represents a function definition or declaration.
-    AST_DECL,           // Represents a variable declaration.
-    AST_INIT,           // Represents an initialization.
-    AST_CONV,           // Represents a type conversion or casting.
-    AST_ADDR,           // Represents taking the address of a variable.
-    AST_DEREF,          // Represents dereferencing a pointer.
-    AST_IF,             // Represents an 'if' statement.
-    AST_TERNARY,        // Represents a ternary conditional expression.
-    AST_DEFAULT,        // Represents a 'default' label in a 'switch' statement.
-    AST_RETURN,         // Represents a 'return' statement.
-    AST_COMPOUND_STMT,  // Represents a compound statement or block of code.
-    AST_STRUCT_REF,     // Represents a struct or union member access.
-    AST_GOTO,           // Represents a 'goto' statement.
-    AST_COMPUTED_GOTO,  // Represents a computed 'goto' statement.
-    AST_LABEL,          // Represents a labeled statement or label definition.
-    OP_SIZEOF,          // Represents the 'sizeof' operator.
-    OP_CAST,            // Represents a cast operation.
-    OP_SHR,             // Represents bitwise shift right operation.
-    OP_SHL,             // Represents bitwise shift left operation.
-    OP_A_SHR,           // Represents arithmetic shift right operation.
-    OP_A_SHL,           // Represents arithmetic shift left operation.
-    OP_PRE_INC,         // Represents pre-increment operation.
-    OP_PRE_DEC,         // Represents pre-decrement operation.
-    OP_POST_INC,        // Represents post-increment operation.
-    OP_POST_DEC,        // Represents post-decrement operation.
-    OP_LABEL_ADDR,      // Represents the address of a label.
-#define op(name, _) name,
-#define keyword(name, x, y) name,
-#include "keyword.inc"
-#undef keyword
-#undef op
-};
-
-#define KIND_VOID    0   // Void type
-#define KIND_BOOL    1   // Boolean type
-#define KIND_CHAR    2   // Character type
-#define KIND_SHORT   3   // Short integer type
-#define KIND_INT     4   // Integer type
-#define KIND_LONG    5   // Long integer type
-#define KIND_LLONG   6   // Long long integer type
-#define KIND_FLOAT   7   // Float type
-#define KIND_DOUBLE  8   // Double type
-#define KIND_LDOUBLE 9   // Long double type
-#define KIND_ARRAY   10  // Array type
-#define KIND_ENUM    11  // Enumerated type
-#define KIND_PTR     12  // Pointer type
-#define KIND_STRUCT  13  // Struct type
-#define KIND_FUNC    14  // Function type
-#define KIND_STUB    15  // Used only in parser
 
 typedef struct _Type {
     int kind;
@@ -237,8 +194,7 @@ typedef struct _Node {
             // Function call
             Vector* args;
             struct _Type* ftype;
-            // Function pointer or function designator
-            struct _Node* fptr;
+            struct _Node* fptr;            // Function pointer or function designator
             // Function declaration
             Vector* params;
             Vector* localvars;
@@ -279,6 +235,47 @@ typedef struct _Node {
     };
 } Node;
 
+enum {
+    AST_LITERAL = 256,
+    AST_LVAR,
+    AST_GVAR,
+    AST_TYPEDEF,
+    AST_FUNCALL,
+    AST_FUNCPTR_CALL,
+    AST_FUNCDESG,
+    AST_FUNC,
+    AST_DECL,
+    AST_INIT,
+    AST_CONV,
+    AST_ADDR,
+    AST_DEREF,
+    AST_IF,
+    AST_TERNARY,
+    AST_DEFAULT,
+    AST_RETURN,
+    AST_COMPOUND_STMT,
+    AST_STRUCT_REF,
+    AST_GOTO,
+    AST_COMPUTED_GOTO,
+    AST_LABEL,
+    OP_SIZEOF,
+    OP_CAST,
+    OP_SHR,
+    OP_SHL,
+    OP_A_SHR,
+    OP_A_SHL,
+    OP_PRE_INC,
+    OP_PRE_DEC,
+    OP_POST_INC,
+    OP_POST_DEC,
+    OP_LABEL_ADDR,
+    #define op(name, _) name,
+    #define keyword(name, x, y) name,
+    #include "keyword.inc"
+    #undef keyword
+    #undef op
+};
+
 extern Type* type_void;
 extern Type* type_bool;
 extern Type* type_char;
@@ -298,130 +295,18 @@ extern Type* type_ldouble;
 #define EMPTY_MAP    ((Map){})
 #define EMPTY_VECTOR ((Vector){})
 
-// from: encoding.c
-Buffer* to_utf16(char* p, int len);
-Buffer* to_utf32(char* p, int len);
-void write_utf8(Buffer* b, uint32_t rune);
-
-// from: buffer.c
-Buffer* make_buffer(void);
-char* buf_body(Buffer* b);
-int buf_len(Buffer* b);
-void buf_write(Buffer* b, char c);
-void buf_append(Buffer* b, char* s, int len);
-void buf_printf(Buffer* b, char* fmt, ...);
-char* vformat(char* fmt, va_list ap);
-char* format(char* fmt, ...);
-char* quote_cstring(char* p);
-char* quote_cstring_len(char* p, int len);
-char* quote_char(char c);
-
-// from: cpp.c
-void read_from_string(char* buf);
-bool is_ident(Token* tok, char* s);
-void expect_newline(void);
-void add_include_path(char* path);
-void init_now(void);
-void cpp_init(void);
-Token* peek_token(void);
-Token* read_token(void);
-
-// from: debug.c
-char* ty2s(Type* ty);
-char* node2s(Node* node);
-char* tok2s(Token* tok);
-
-// from: dict.c
-Dict* make_dict(void);
-void* dict_get(Dict* dict, char* key);
-void dict_put(Dict* dict, char* key, void* val);
-Vector* dict_keys(Dict* dict);
-
-// from: error.c
-extern bool enable_warning;
-extern bool dumpstack;
-extern bool dumpsource;
-extern bool warning_is_error;
-
-#define STR2(x) #x
-#define STR(x) STR2(x)
-#define error(...)       errorf(__FILE__ ":" STR(__LINE__), NULL, __VA_ARGS__)
-#define errort(tok, ...) errorf(__FILE__ ":" STR(__LINE__), token_pos(tok), __VA_ARGS__)
-#define warn(...)        warnf(__FILE__ ":" STR(__LINE__), NULL, __VA_ARGS__)
-#define warnt(tok, ...)  warnf(__FILE__ ":" STR(__LINE__), token_pos(tok), __VA_ARGS__)
-
-noreturn void errorf(char* line, char* pos, char* fmt, ...);
-void warnf(char* line, char* pos, char* fmt, ...);
-char* token_pos(Token* tok);
-
-// from: file.c
-File* make_file(FILE* file, char* name);
-File* make_file_string(char* s);
-int readc(void);
-void unreadc(int c);
-File* current_file(void);
-void stream_push(File* file);
-int stream_depth(void);
-char* input_position(void);
-void stream_stash(File* f);
-void stream_unstash(void);
-
-// from: gen.c
-void set_output_file(FILE* fp);
-void close_output_file(void);
-void emit_toplevel(Node* v);
-
-// from: lex.c
-void lex_init(char* filename);
-char* get_base_file();
-void skip_cond_incl(void);
-char* read_header_file_name(bool* std);
-bool is_keyword(Token* tok, int c);
-void token_buffer_stash(Vector* buf);
-void token_buffer_unstash();
-void unget_token(Token* tok);
-Token* lex_string(char* s);
-Token* lex(void);
-
-// from: map.c
-Map* make_map(void);
-Map* make_map_parent(Map* parent);
-void* map_get(Map* m, char* key);
-void map_put(Map* m, char* key, void* val);
-void map_remove(Map* m, char* key);
-size_t map_len(Map* m);
-
-// from: parse.c
-char* make_tempname(void);
-char* make_label(void);
-bool is_inttype(Type* ty);
-bool is_flotype(Type* ty);
-void* make_pair(void* first, void* second);
-int eval_intexpr(Node* node, Node** addr);
-Node* read_expr(void);
-Vector* read_toplevels(void);
-void parse_init(void);
-char* fullpath(char* path);
-
-// from: set.c
-Set* set_add(Set* s, char* v);
-bool set_has(Set* s, char* v);
-Set* set_union(Set* a, Set* b);
-Set* set_intersection(Set* a, Set* b);
-
-// from: vector.c
-Vector* make_vector(void);
-Vector* make_vector1(void* e);
-Vector* vec_copy(Vector* src);
-void vec_push(Vector* vec, void* elem);
-void vec_append(Vector* a, Vector* b);
-void* vec_pop(Vector* vec);
-void* vec_get(Vector* vec, int index);
-void vec_set(Vector* vec, int index, void* val);
-void* vec_head(Vector* vec);
-void* vec_tail(Vector* vec);
-Vector* vec_reverse(Vector* vec);
-void* vec_body(Vector* vec);
-int vec_len(Vector* vec);
+#include "headers/buffer.h"
+#include "headers/cpp.h"
+#include "headers/debug.h"
+#include "headers/dict.h"
+#include "headers/encoding.h"
+#include "headers/error.h"
+#include "headers/file.h"
+#include "headers/gen.h"
+#include "headers/lex.h"
+#include "headers/map.h"
+#include "headers/parse.h"
+#include "headers/set.h"
+#include "headers/vector.h"
 
 #endif

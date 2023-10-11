@@ -7,8 +7,8 @@
 // (wchar_t or char32_t strings).
 // Unprefixed or u8 strings are supposed to be in UTF-8 endcoding.
 // Source files are supposed to be written in UTF-8.
-#include "8cc.h"
 
+#include "headers/encoding.h"
 
 static int count_leading_ones(char c) {
     for (int i = 7; i >= 0; i--)

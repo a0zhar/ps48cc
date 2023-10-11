@@ -1,6 +1,5 @@
 // Copyright 2012 Rui Ueyama. Released under the MIT license.
-#pragma once 
-
+#pragma once
 #ifndef __STDBOOL_H
 #define __STDBOOL_H
 

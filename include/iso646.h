@@ -1,6 +1,7 @@
 // Copyright 2014 Rui Ueyama. Released under the MIT license.
+
 // C11 7.9 Alternative Spellings
-#pragma once 
+#pragma once
 
 #ifndef __ISO646_H
 #define __ISO646_H

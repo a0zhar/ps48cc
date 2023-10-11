@@ -1,5 +1,5 @@
 // Copyright 2014 Rui Ueyama. Released under the MIT license.
-#pragma once 
+#pragma once
 
 #ifndef __STDFLOAT_H
 #define __STDFLOAT_H

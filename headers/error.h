@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _ERROR_H
-#define _ERROR_H
+#ifndef _ERRORR_H
+#define _ERRORR_H
 #include "../8cc.h"
 extern bool enable_warning;
 extern bool dumpstack;
@@ -17,6 +17,4 @@ extern bool warning_is_error;
 noreturn void errorf(char* line, char* pos, char* fmt, ...);
 void warnf(char* line, char* pos, char* fmt, ...);
 char* token_pos(Token* tok);
-
-
 #endif

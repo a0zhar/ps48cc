@@ -3,14 +3,14 @@
 /*
  * Recursive descendent parser for C.
  */
+
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "8cc.h"
-
+#include "headers/parse.h"
 
  // The largest alignment requirement on x86-64. When we are allocating memory
  // for an array whose type is unknown, the array will be aligned to this
@@ -220,7 +220,7 @@ static Node* ast_typedef(Type* ty, char* name) {
 static Node* ast_string(int enc, char* str, int len) {
     Type* ty;
     char* body;
-    Buffer* b;
+
     switch (enc) {
         case ENC_NONE:
         case ENC_UTF8:
@@ -228,18 +228,22 @@ static Node* ast_string(int enc, char* str, int len) {
             body = str;
             break;
         case ENC_CHAR16:
-            b = to_utf16(str, len);
-            ty = make_array_type(type_ushort, buf_len(b) / type_ushort->size);
-            body = buf_body(b);
-            break;
+            {
+                Buffer* b = to_utf16(str, len);
+                ty = make_array_type(type_ushort, buf_len(b) / type_ushort->size);
+                body = buf_body(b);
+                break;
+            }
         case ENC_CHAR32:
         case ENC_WCHAR:
-            b = to_utf32(str, len);
-            ty = make_array_type(type_uint, buf_len(b) / type_uint->size);
-            body = buf_body(b);
-            break;
-    };
-    return make_ast(&(Node) { AST_LITERAL, .ty = ty, .sval = body });;
+            {
+                Buffer* b = to_utf32(str, len);
+                ty = make_array_type(type_uint, buf_len(b) / type_uint->size);
+                body = buf_body(b);
+                break;
+            }
+    }
+    return make_ast(&(Node) { AST_LITERAL, .ty = ty, .sval = body });
 }
 
 static Node* ast_funcall(Type* ftype, char* fname, Vector* args) {
@@ -342,31 +346,28 @@ static Type* make_type(Type* tmpl) {
 
 static Type* copy_type(Type* ty) {
     Type* r = malloc(sizeof(Type));
-    if (r != NULL) memcpy(r, ty, sizeof(Type));
+    memcpy(r, ty, sizeof(Type));
     return r;
 }
 
 static Type* make_numtype(int kind, bool usig) {
     Type* r = calloc(1, sizeof(Type));
-    if (r != NULL) {
-        r->kind = kind;
-        r->usig = usig;
-        switch (kind) {
-            case KIND_VOID:    r->size = r->align = 0; break;
-            case KIND_BOOL:    r->size = r->align = 1; break;
-            case KIND_CHAR:    r->size = r->align = 1; break;
-            case KIND_SHORT:   r->size = r->align = 2; break;
-            case KIND_INT:     r->size = r->align = 4; break;
-            case KIND_LONG:    r->size = r->align = 8; break;
-            case KIND_LLONG:   r->size = r->align = 8; break;
-            case KIND_FLOAT:   r->size = r->align = 4, error("float"); break;
-            case KIND_DOUBLE:  r->size = r->align = 8, error("float"); break;
-            case KIND_LDOUBLE: r->size = r->align = 8, error("float"); break;
-            default: error("internal error"); break;
-        };
-        return r;
-    }
-    return NULL;
+    r->kind = kind;
+    r->usig = usig;
+    switch (kind) {
+        case KIND_VOID:    r->size = r->align = 0; break;
+        case KIND_BOOL:    r->size = r->align = 1; break;
+        case KIND_CHAR:    r->size = r->align = 1; break;
+        case KIND_SHORT:   r->size = r->align = 2; break;
+        case KIND_INT:     r->size = r->align = 4; break;
+        case KIND_LONG:    r->size = r->align = 8; break;
+        case KIND_LLONG:   r->size = r->align = 8; break;
+        case KIND_FLOAT:   r->size = r->align = 4, error("float"); break;
+        case KIND_DOUBLE:  r->size = r->align = 8, error("float"); break;
+        case KIND_LDOUBLE: r->size = r->align = 8, error("float"); break;
+        default: error("internal error"); break;
+    };
+    return r;
 }
 
 static Type* make_ptr_type(Type* ty) {
@@ -374,9 +375,18 @@ static Type* make_ptr_type(Type* ty) {
 }
 
 static Type* make_array_type(Type* ty, int len) {
-    int size = (len == -1) ? -1 : ty->size * len;
-
-    return make_type(&(Type) { KIND_ARRAY, .ptr = ty, .size = size, .len = len, .align = ty->align });
+    int size;
+    if (len == -1)
+        size = -1;
+    else
+        size = ty->size * len;
+    return make_type(&(Type) {
+        KIND_ARRAY,
+            .ptr = ty,
+            .size = size,
+            .len = len,
+            .align = ty->align
+    });
 }
 
 static Type* make_rectype(bool is_struct) {
@@ -404,12 +414,8 @@ static Type* make_stub_type() {
 
 bool is_inttype(Type* ty) {
     switch (ty->kind) {
-        case KIND_BOOL:
-        case KIND_CHAR:
-        case KIND_SHORT:
-        case KIND_INT:
-        case KIND_LONG:
-        case KIND_LLONG:
+        case KIND_BOOL: case KIND_CHAR: case KIND_SHORT: case KIND_INT:
+        case KIND_LONG: case KIND_LLONG:
             return true;
         default:
             return false;
@@ -574,11 +580,12 @@ static bool valid_pointer_binop(int op) {
 }
 
 static Node* binop(int op, Node* lhs, Node* rhs) {
-    if (lhs->ty->kind == KIND_PTR &&
-        rhs->ty->kind == KIND_PTR) {
-        if (!valid_pointer_binop(op)) error("invalid pointer arith");
+    if (lhs->ty->kind == KIND_PTR && rhs->ty->kind == KIND_PTR) {
+        if (!valid_pointer_binop(op))
+            error("invalid pointer arith");
         // C11 6.5.6.9: Pointer subtractions have type ptrdiff_t.
-        if (op == '-') return ast_binop(type_long, op, lhs, rhs);
+        if (op == '-')
+            return ast_binop(type_long, op, lhs, rhs);
         // C11 6.5.8.6, 6.5.9.3: Pointer comparisons have type int.
         return ast_binop(type_int, op, lhs, rhs);
     }
@@ -593,29 +600,30 @@ static Node* binop(int op, Node* lhs, Node* rhs) {
 }
 
 static bool is_same_struct(Type* a, Type* b) {
-    if (a->kind != b->kind) return false;
-
-    int _kind = a->kind;
-    if (_kind == KIND_ARRAY)
-        return a->len == b->len && is_same_struct(a->ptr, b->ptr);
-    else if (_kind == KIND_PTR)
-        return is_same_struct(a->ptr, b->ptr);
-    else if (_kind == KIND_STRUCT) {
-        if (a->is_struct != b->is_struct)
-            return false;
-        Vector* ka = dict_keys(a->fields);
-        Vector* kb = dict_keys(b->fields);
-
-        if (vec_len(ka) != vec_len(kb)) return false;
-
-        for (int i = 0; i < vec_len(ka); i++) {
-            if (!is_same_struct(vec_get(ka, i), vec_get(kb, i))) {
-                return false;
+    if (a->kind != b->kind)
+        return false;
+    switch (a->kind) {
+        case KIND_ARRAY:
+            return a->len == b->len &&
+                is_same_struct(a->ptr, b->ptr);
+        case KIND_PTR:
+            return is_same_struct(a->ptr, b->ptr);
+        case KIND_STRUCT:
+            {
+                if (a->is_struct != b->is_struct)
+                    return false;
+                Vector* ka = dict_keys(a->fields);
+                Vector* kb = dict_keys(b->fields);
+                if (vec_len(ka) != vec_len(kb))
+                    return false;
+                for (int i = 0; i < vec_len(ka); i++)
+                    if (!is_same_struct(vec_get(ka, i), vec_get(kb, i)))
+                        return false;
+                return true;
             }
-        }
-        // return true;
-    } // else return true;
-    return true;
+        default:
+            return true;
+    }
 }
 
 static void ensure_assignable(Type* totype, Type* fromtype) {
@@ -662,7 +670,8 @@ int eval_intexpr(Node* node, Node** addr) {
             if (node->operand->ty->kind == KIND_PTR)
                 return eval_intexpr(node->operand, addr);
             goto error;
-        case AST_TERNARY: {
+        case AST_TERNARY:
+            {
                 long cond = eval_intexpr(node->cond, addr);
                 if (cond)
                     return node->then ? eval_intexpr(node->then, addr) : cond;
@@ -1167,17 +1176,13 @@ static Node* read_cast_expr() {
 }
 
 static Node* read_multiplicative_expr() {
-    for (Node* node = read_cast_expr();;) {
-        if (next_token('*'))
-            node = binop('*', conv(node), conv(read_cast_expr()));
-        else if (next_token('/'))
-            node = binop('/', conv(node), conv(read_cast_expr()));
-        else if (next_token('%'))
-            node = binop('%', conv(node), conv(read_cast_expr()));
-        else
-            return node;
+    Node* node = read_cast_expr();
+    for (;;) {
+        if (next_token('*'))      node = binop('*', conv(node), conv(read_cast_expr()));
+        else if (next_token('/')) node = binop('/', conv(node), conv(read_cast_expr()));
+        else if (next_token('%')) node = binop('%', conv(node), conv(read_cast_expr()));
+        else    return node;
     }
-
 }
 
 static Node* read_additive_expr() {
@@ -1210,8 +1215,7 @@ static Node* read_shift_expr() {
 static Node* read_relational_expr() {
     Node* node = read_shift_expr();
     for (;;) {
-        if (next_token('<'))
-            node = binop('<', conv(node), conv(read_shift_expr()));
+        if (next_token('<'))   node = binop('<', conv(node), conv(read_shift_expr()));
         else if (next_token('>'))   node = binop('<', conv(read_shift_expr()), conv(node));
         else if (next_token(OP_LE)) node = binop(OP_LE, conv(node), conv(read_shift_expr()));
         else if (next_token(OP_GE)) node = binop(OP_LE, conv(read_shift_expr()), conv(node));

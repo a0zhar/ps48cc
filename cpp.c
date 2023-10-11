@@ -12,7 +12,8 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include "8cc.h"
+#include "headers/cpp.h"
+
 
 static Map* macros = &EMPTY_MAP;
 static Map* once = &EMPTY_MAP;
@@ -150,10 +151,12 @@ static Vector* read_one_arg(Token* ident, bool* end, bool readall) {
     int level = 0;
     for (;;) {
         Token* tok = lex();
+
         if (tok->kind == TEOF)
             errort(ident, "unterminated macro argument list");
-        if (tok->kind == TNEWLINE)
+        else if (tok->kind == TNEWLINE)
             continue;
+        
         if (tok->bol && is_keyword(tok, '#')) {
             read_directive(tok);
             continue;

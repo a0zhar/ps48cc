@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include "8cc.h"
 
-
 // Returns the shortest path for the given full path to a file.
 static char *clean(char *p) {
     assert(*p == '/');

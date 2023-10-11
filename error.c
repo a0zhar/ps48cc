@@ -1,9 +1,9 @@
 // Copyright 2012 Rui Ueyama. Released under the MIT license.
+
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "8cc.h"
-
+#include "headers/error.h"
 
 bool enable_warning = true;
 bool warning_is_error = false;

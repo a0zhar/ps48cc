@@ -1,4 +1,3 @@
-// map.h
 #pragma once
 #ifndef _MAP_H
 #define _MAP_H
@@ -9,5 +8,4 @@ void* map_get(Map* m, char* key);
 void map_put(Map* m, char* key, void* val);
 void map_remove(Map* m, char* key);
 size_t map_len(Map* m);
-
 #endif

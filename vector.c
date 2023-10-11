@@ -3,44 +3,33 @@
 /*
  * Vectors are containers of void pointers that can change in size.
  */
+
 #include <stdlib.h>
 #include <string.h>
-#include "8cc.h"
-
+#include "headers/vector.h"
 #define MIN_SIZE 8
 
 static int max(int a, int b) {
     return a > b ? a : b;
 }
 
-// Takes a value as argument, then rounds it up before it is
-// returned.
-static int roundup(int value) {
-    if (value == 0) return 0;
+static int roundup(int n) {
+    if (n == 0)
+        return 0;
     int r = 1;
-    for (; value > r; r *= 2) {}
+    while (n > r)
+        r *= 2;
     return r;
 }
 
 static Vector* do_make_vector(int size) {
-    Vector* vec = malloc(sizeof(Vector));
-    if (vec == NULL || !vec)
-        return NULL;
-
+    Vector* r = malloc(sizeof(Vector));
     size = roundup(size);
-    if (size > 0) {
-        void* allocMem = malloc(sizeof(void*) * size);
-        if (allocMem == NULL) {
-            // Print error msg here
-            // Free memory allocated for the vec variable
-            free(vec);
-            return NULL;
-        }
-        vec->body = allocMem;
-    }
-    vec->len = 0;
-    vec->nalloc = size;
-    return vec;
+    if (size > 0)
+        r->body = malloc(sizeof(void*) * size);
+    r->len = 0;
+    r->nalloc = size;
+    return r;
 }
 
 Vector* make_vector() {
